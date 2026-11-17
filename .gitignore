@@ -221,3 +221,17 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+
+
+
+
+# Specific to project
+build/
+data/
+.venv/
+*.raw
+*.vti
+*.vtk
+__pycache__/
+results/**/*.bin
