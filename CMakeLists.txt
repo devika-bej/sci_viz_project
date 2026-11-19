@@ -13,3 +13,7 @@ find_package(OpenMP REQUIRED)
 add_executable(extreem src/main.cpp)          # add more sources as you go
 target_include_directories(extreem PRIVATE include)
 target_link_libraries(extreem PRIVATE OpenMP::OpenMP_CXX)
+
+add_executable(run_tests tests/test_main.cpp)
+target_include_directories(run_tests PRIVATE include)
+target_link_libraries(run_tests PRIVATE OpenMP::OpenMP_CXX)
