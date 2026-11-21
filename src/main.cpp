@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <climits>
 #include <fstream>
+#include <memory>
 #include <omp.h>
 
 #include "io.h"
@@ -15,6 +16,7 @@
 #include "critical_points.h"
 #include "extremum_graph.h"
 #include "graph_split_tree.h"
+#include "egp.h"
 #include "output.h"
 
 static void usage()
@@ -277,6 +279,32 @@ int main(int argc, char **argv)
                << VG << ',' << EG << ',' << VK << ',' << EK << ',' << ratio << '\n';
 
             return minDeg >= 2 ? 0 : 2;
+        }
+        else if (algo == "egp")
+        {
+            std::vector<int> dm;
+            timed("pc", [&]
+                  { dm = compressPath(o, grid); });
+
+            static LinkTables lt;
+            buildLUT(lt);
+            CriticalPoints cp;
+            timed("cp_lut", [&]
+                  { cp = classifyCriticalPoints(grid, o, dm, lt, true); });
+
+            ExtremumGraph G;
+            timed("graph", [&]
+                  { G = buildGraph(grid, o, dm, cp); });
+
+            std::unique_ptr<EGP> egp;
+            timed("egp_setup", [&]
+                  { egp = std::make_unique<EGP>(G, o); });
+            timed("egp", [&]
+                  { egp->egpSerial(); });
+
+            std::printf("  egp rounds=%d  pairs=%zu\n", egp->rounds, egp->pairs.size());
+            writePairs(outDir + "/pairs_egp.csv", egp->pairs, o.order, f);
+            return 0;
         }
 
         std::fprintf(stderr, "unknown --algo '%s'\n", algo.c_str());

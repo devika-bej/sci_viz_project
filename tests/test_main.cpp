@@ -10,6 +10,7 @@
 #include "critical_points.h"
 #include "extremum_graph.h"
 #include "graph_split_tree.h"
+#include "egp.h"
 
 static int failures = 0;
 #define CHECK(cond)                                                     \
@@ -205,6 +206,13 @@ static void checkGraph(const char *name, const std::vector<float> &f, int nx, in
         std::printf("FAIL %s: graph pairs != baseline\n", name);
         ++failures;
     }
+    EGP egp(G, o);
+    egp.egpSerial();
+    if (canonPairs(b.pairs) != canonPairs(egp.pairs))
+    {
+        std::printf("FAIL %s: EGP pairs != baseline\n", name);
+        ++failures;
+    }
 }
 
 static void testGraph(const LinkTables &lt)
@@ -213,6 +221,7 @@ static void testGraph(const LinkTables &lt)
     checkGraph("2x2 diag-edge", {9, 0, 0, 8}, 2, 2, 1, {}, lt);
     checkGraph("2x2 no-edge", {0, 9, 8, 0}, 2, 2, 1, {{3, {1, 2}}}, lt);
     checkGraph("3x3 multi", {1, 9, 2, 8, 5, 0, 3, 4, 7}, 3, 3, 1, {{4, {1, 3, 8}}}, lt);
+    checkGraph("1D stale parent", {9, 6, 8, 3, 7}, 5, 1, 1, {{1, {0, 2}}, {3, {2, 4}}}, lt);
 
     Grid g(3, 3, 3);                                // |E(K)| of a 3x3x3 grid, counted by hand:
     CHECK(gridEdgeCount(g) == 3 * 18 + 3 * 12 + 8); // 3 axis dirs x 18 + 3 face diags x 12 + 1 cube diag x 8 = 98
