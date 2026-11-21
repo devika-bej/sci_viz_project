@@ -235,6 +235,7 @@ data/
 *.vtk
 __pycache__/
 results/**/*.bin
+vis/
 
 
 results/backpack_512x512x373_uint16/

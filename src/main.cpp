@@ -122,7 +122,7 @@ int main(int argc, char **argv)
     {
         const RawInfo info = parseFilename(input);
         if (outDir.empty())
-            outDir = "results/" + info.stem;
+            outDir = (algo == "vis" ? "vis/" : "results/") + info.stem;
         std::filesystem::create_directories(outDir);
         const std::string timingLog = "results/timings.csv";
         const int threads = omp_get_max_threads();
@@ -136,7 +136,8 @@ int main(int argc, char **argv)
             fn();
             double dt = omp_get_wtime() - t0;
             std::printf("  %-12s %9.4f s\n", step.c_str(), dt);
-            appendTiming(timingLog, info.stem, algo, threads, step, dt);
+            if (algo != "vis")
+                appendTiming(timingLog, info.stem, algo, threads, step, dt);
         };
 
         std::vector<float> f;
@@ -321,6 +322,32 @@ int main(int argc, char **argv)
             std::printf("  [%s] parallel == serial\n", (same && egpS->rounds == egpP->rounds) ? "PASS" : "FAIL");
             writePairs(outDir + "/pairs_egp.csv", egpP->pairs, o.order, f);
             return same ? 0 : 2;
+        }
+
+        else if (algo == "vis")
+        {
+            // Writes everything python/export_vtk.py needs. Not timed, no benchmark logs.
+            std::vector<int> dm = compressPath(o, grid);
+            static LinkTables lt;
+            buildLUT(lt);
+            CriticalPoints cp = classifyCriticalPoints(grid, o, dm, lt, true);
+            ExtremumGraph G = buildGraph(grid, o, dm, cp);
+            EGP egp(G, o);
+            egp.egpParallel();
+
+            writeBinaryInt(outDir + "/dm.bin", dm);
+            writePairs(outDir + "/pairs_egp.csv", egp.pairs, o.order, f);
+            writeMaxima(outDir + "/maxima.csv", cp.maxima, o.order, f);
+            writeSaddles(outDir + "/saddles.csv", cp.saddles, o.order, f);
+
+            std::ofstream ge(outDir + "/graph_edges.csv");
+            ge << "saddle_id,max_id\n";
+            for (size_t i = 0; i < G.saddles.size(); ++i)
+                for (int e = G.offset[i]; e < G.offset[i + 1]; ++e)
+                    ge << G.saddles[i] << ',' << G.nbr[e] << '\n';
+
+            std::printf("  wrote vis inputs to %s\n", outDir.c_str());
+            return 0;
         }
 
         std::fprintf(stderr, "unknown --algo '%s'\n", algo.c_str());
