@@ -1,0 +1,65 @@
+== build ==
+ninja: no work to do.
+== metadata ==
+== [1/3] correctness + peak memory ==
+-- backpack_512x512x373_uint16
+   SAME  ExTreeM pairs == baseline pairs
+-- bonsai_256x256x256_uint8
+   SAME  ExTreeM pairs == baseline pairs
+-- gauss_k5_s0_32x32x32_float32
+   SAME  ExTreeM pairs == baseline pairs
+-- hydrogen_atom_128x128x128_uint8
+   SAME  ExTreeM pairs == baseline pairs
+-- magnetic_reconnection_512x512x512_float32
+   SAME  ExTreeM pairs == baseline pairs
+-- neghip_64x64x64_uint8
+   SAME  ExTreeM pairs == baseline pairs
+-- perlin_r32_o3_s0_256x256x256_float32
+   SAME  ExTreeM pairs == baseline pairs
+-- perlin_r8_o4_s0_128x128x128_float32
+   SAME  ExTreeM pairs == baseline pairs
+-- perlin_r8_o4_s0_256x256x256_float32
+   SAME  ExTreeM pairs == baseline pairs
+-- perlin_r8_o4_s0_64x64x64_float32
+   SAME  ExTreeM pairs == baseline pairs
+== [2/3] extremum graph sizes ==
+== [3/3] thread scaling (repeats=3, threads: 1 2 4 8 16 24) ==
+-- backpack_512x512x373_uint16  repeat 1/3
+-- backpack_512x512x373_uint16  repeat 2/3
+-- backpack_512x512x373_uint16  repeat 3/3
+-- bonsai_256x256x256_uint8  repeat 1/3
+-- bonsai_256x256x256_uint8  repeat 2/3
+-- bonsai_256x256x256_uint8  repeat 3/3
+-- gauss_k5_s0_32x32x32_float32  repeat 1/3
+-- gauss_k5_s0_32x32x32_float32  repeat 2/3
+-- gauss_k5_s0_32x32x32_float32  repeat 3/3
+-- hydrogen_atom_128x128x128_uint8  repeat 1/3
+-- hydrogen_atom_128x128x128_uint8  repeat 2/3
+-- hydrogen_atom_128x128x128_uint8  repeat 3/3
+-- magnetic_reconnection_512x512x512_float32  repeat 1/3
+-- magnetic_reconnection_512x512x512_float32  repeat 2/3
+-- magnetic_reconnection_512x512x512_float32  repeat 3/3
+-- neghip_64x64x64_uint8  repeat 1/3
+-- neghip_64x64x64_uint8  repeat 2/3
+-- neghip_64x64x64_uint8  repeat 3/3
+-- perlin_r32_o3_s0_256x256x256_float32  repeat 1/3
+-- perlin_r32_o3_s0_256x256x256_float32  repeat 2/3
+-- perlin_r32_o3_s0_256x256x256_float32  repeat 3/3
+-- perlin_r8_o4_s0_128x128x128_float32  repeat 1/3
+-- perlin_r8_o4_s0_128x128x128_float32  repeat 2/3
+-- perlin_r8_o4_s0_128x128x128_float32  repeat 3/3
+-- perlin_r8_o4_s0_256x256x256_float32  repeat 1/3
+-- perlin_r8_o4_s0_256x256x256_float32  repeat 2/3
+-- perlin_r8_o4_s0_256x256x256_float32  repeat 3/3
+-- perlin_r8_o4_s0_64x64x64_float32  repeat 1/3
+-- perlin_r8_o4_s0_64x64x64_float32  repeat 2/3
+-- perlin_r8_o4_s0_64x64x64_float32  repeat 3/3
+
+done. outputs:
+  results/timings.csv              scaling runs (dataset,algo,threads,step,seconds)
+  results/timings_correctness.csv  timings from the correctness runs
+  results/timings_graph.csv        includes graph_uf (serial sweep on G)
+  results/graph_stats.csv          |V(G)|, |E(G)|, ratio
+  results/memory.csv               peak memory per dataset/algorithm
+  results/meta.txt                 machine + settings
+  results/<dataset>/pairs_*.csv    persistence pairs
