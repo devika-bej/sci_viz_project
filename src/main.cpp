@@ -3,6 +3,8 @@
 #include <string>
 #include <vector>
 #include <algorithm>
+#include <climits>
+#include <fstream>
 #include <omp.h>
 
 #include "io.h"
@@ -11,6 +13,8 @@
 #include "baseline_uf.h"
 #include "path_compression.h"
 #include "critical_points.h"
+#include "extremum_graph.h"
+#include "graph_split_tree.h"
 #include "output.h"
 
 static void usage()
@@ -222,6 +226,57 @@ int main(int argc, char **argv)
             writeMaxima(outDir + "/maxima_cp.csv", cpL.maxima, o.order, f);
             writeSaddles(outDir + "/saddles_cp.csv", cpL.saddles, o.order, f);
             return (same && maxConsistent) ? 0 : 2;
+        }
+        else if (algo == "graph")
+        {
+            std::vector<int> dm;
+            timed("pc", [&]
+                  { dm = compressPath(o, grid); });
+
+            static LinkTables lt;
+            buildLUT(lt);
+            CriticalPoints cp;
+            timed("cp_lut", [&]
+                  { cp = classifyCriticalPoints(grid, o, dm, lt, true); });
+
+            ExtremumGraph G;
+            timed("graph", [&]
+                  { G = buildGraph(grid, o, dm, cp); });
+
+            GraphSplitTree gst(G, o);
+            timed("graph_uf", [&]
+                  { gst.compute(); });
+
+            const long long VG = (long long)G.maxima.size() + (long long)G.saddles.size();
+            const long long EG = (long long)G.nbr.size();
+            const long long VK = grid.n, EK = gridEdgeCount(grid);
+            const double ratio = 100.0 * (double)(VG + EG) / (double)(VK + EK);
+
+            int minDeg = INT_MAX, maxDeg = 0;
+            for (size_t i = 0; i < G.saddles.size(); ++i)
+            {
+                int d = G.offset[i + 1] - G.offset[i];
+                minDeg = std::min(minDeg, d);
+                maxDeg = std::max(maxDeg, d);
+            }
+            if (G.saddles.empty())
+                minDeg = 2;
+
+            std::printf("  |V(G)|=%lld  |E(G)|=%lld   |V(K)|=%lld  |E(K)|=%lld   ratio=%.4f%%\n", VG, EG, VK, EK, ratio);
+            std::printf("  saddle degree: min=%d max=%d   pairs=%zu\n", minDeg, maxDeg, gst.pairs.size());
+            std::printf("  [%s] every saddle has >= 2 edges\n", minDeg >= 2 ? "PASS" : "FAIL");
+
+            writePairs(outDir + "/pairs_graph.csv", gst.pairs, o.order, f);
+
+            const std::string statsPath = "results/graph_stats.csv";
+            const bool isNew = !std::filesystem::exists(statsPath);
+            std::ofstream st(statsPath, std::ios::app);
+            if (isNew)
+                st << "dataset,maxima,saddles,VG,EG,VK,EK,ratio_percent\n";
+            st << info.stem << ',' << G.maxima.size() << ',' << G.saddles.size() << ','
+               << VG << ',' << EG << ',' << VK << ',' << EK << ',' << ratio << '\n';
+
+            return minDeg >= 2 ? 0 : 2;
         }
 
         std::fprintf(stderr, "unknown --algo '%s'\n", algo.c_str());
