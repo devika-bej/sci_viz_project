@@ -30,8 +30,8 @@ inline std::vector<int> compressPath(const OrderField &o, const Grid &grid, int 
     {
         int t = omp_get_thread_num();
         int nthreads = omp_get_num_threads();
-        int begin = (long long)(grid.n * t) / nthreads;
-        int end = (long long)(grid.n * (t + 1)) / nthreads;
+        const int begin = (int)((long long)(grid.n * t) / nthreads);
+        const int end = (int)((long long)(grid.n * (t + 1)) / nthreads);
 
         std::vector<int> current, next;
         for (int v = begin; v < end; ++v)

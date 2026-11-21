@@ -2,6 +2,7 @@
 #include <vector>
 #include <numeric>
 #include <algorithm>
+#include <parallel/algorithm>
 
 struct OrderField
 {
@@ -17,8 +18,8 @@ inline OrderField computeOrder(const std::vector<float> &f)
     result.sorted.resize(n);
 
     std::iota(result.sorted.begin(), result.sorted.end(), 0);
-    std::sort(result.sorted.begin(), result.sorted.end(), [&](int i, int j)
-              { return f[i] < f[j] || (f[i] == f[j] && i < j); });
+    __gnu_parallel::sort(result.sorted.begin(), result.sorted.end(), [&](int i, int j)
+                         { return f[i] < f[j] || (f[i] == f[j] && i < j); });
 
 #pragma omp parallel for
     for (int i = 0; i < n; ++i)
