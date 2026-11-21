@@ -206,11 +206,18 @@ static void checkGraph(const char *name, const std::vector<float> &f, int nx, in
         std::printf("FAIL %s: graph pairs != baseline\n", name);
         ++failures;
     }
-    EGP egp(G, o);
-    egp.egpSerial();
-    if (canonPairs(b.pairs) != canonPairs(egp.pairs))
+    EGP egpS(G, o);
+    egpS.egpSerial();
+    if (canonPairs(b.pairs) != canonPairs(egpS.pairs))
     {
-        std::printf("FAIL %s: EGP pairs != baseline\n", name);
+        std::printf("FAIL %s: EGP Serial pairs != baseline\n", name);
+        ++failures;
+    }
+    EGP egpP(G, o);
+    egpP.egpParallel();
+    if (canonPairs(b.pairs) != canonPairs(egpP.pairs))
+    {
+        std::printf("FAIL %s: EGP Parallel pairs != baseline\n", name);
         ++failures;
     }
 }

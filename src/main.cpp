@@ -7,6 +7,7 @@
 #include <fstream>
 #include <memory>
 #include <omp.h>
+#include <tuple>
 
 #include "io.h"
 #include "grid.h"
@@ -296,15 +297,30 @@ int main(int argc, char **argv)
             timed("graph", [&]
                   { G = buildGraph(grid, o, dm, cp); });
 
-            std::unique_ptr<EGP> egp;
+            std::unique_ptr<EGP> egpS, egpP;
             timed("egp_setup", [&]
-                  { egp = std::make_unique<EGP>(G, o); });
-            timed("egp", [&]
-                  { egp->egpSerial(); });
+                  { egpS = std::make_unique<EGP>(G, o); });
+            timed("egp_serial", [&]
+                  { egpS->egpSerial(); });
+            egpP = std::make_unique<EGP>(G, o);
+            timed("egp_par", [&]
+                  { egpP->egpParallel(); });
 
-            std::printf("  egp rounds=%d  pairs=%zu\n", egp->rounds, egp->pairs.size());
-            writePairs(outDir + "/pairs_egp.csv", egp->pairs, o.order, f);
-            return 0;
+            auto canon = [](std::vector<PersistencePair> p)
+            {
+                std::sort(p.begin(), p.end(), [](const PersistencePair &a, const PersistencePair &b)
+                          { return std::tie(a.maxV, a.saddle, a.parentMax) < std::tie(b.maxV, b.saddle, b.parentMax); });
+                return p;
+            };
+            auto a = canon(egpS->pairs), b = canon(egpP->pairs);
+            bool same = a.size() == b.size() && std::equal(a.begin(), a.end(), b.begin(),
+                                                           [](const PersistencePair &x, const PersistencePair &y)
+                                                           { return x.maxV == y.maxV && x.saddle == y.saddle && x.parentMax == y.parentMax; });
+
+            std::printf("  egp rounds: serial=%d parallel=%d  pairs=%zu\n", egpS->rounds, egpP->rounds, egpP->pairs.size());
+            std::printf("  [%s] parallel == serial\n", (same && egpS->rounds == egpP->rounds) ? "PASS" : "FAIL");
+            writePairs(outDir + "/pairs_egp.csv", egpP->pairs, o.order, f);
+            return same ? 0 : 2;
         }
 
         std::fprintf(stderr, "unknown --algo '%s'\n", algo.c_str());
