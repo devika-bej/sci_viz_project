@@ -235,3 +235,15 @@ data/
 *.vtk
 __pycache__/
 results/**/*.bin
+
+
+results/backpack_512x512x373_uint16/
+results/bonsai_256x256x256_uint8/
+results/gauss_k5_s0_32x32x32_float32/
+results/hydrogen_atom_128x128x128_uint8/
+results/magnetic_reconnection_512x512x512_float32/
+results/neghip_64x64x64_uint8/
+results/perlin_r32_o3_s0_256x256x256_float32/
+results/perlin_r8_o4_s0_128x128x128_float32/
+results/perlin_r8_o4_s0_256x256x256_float32/
+results/perlin_r8_o4_s0_64x64x64_float32/
