@@ -2,6 +2,7 @@
 #include <filesystem>
 #include <string>
 #include <vector>
+#include <algorithm>
 #include <omp.h>
 
 #include "io.h"
@@ -9,6 +10,7 @@
 #include "order.h"
 #include "baseline_uf.h"
 #include "path_compression.h"
+#include "critical_points.h"
 #include "output.h"
 
 static void usage()
@@ -171,6 +173,55 @@ int main(int argc, char **argv)
             writeMaxima(outDir + "/maxima_pc.csv", maxima, o.order, f);
             writeBinaryInt(outDir + "/dm.bin", dm);
             return 0;
+        }
+        else if (algo == "cp")
+        {
+            std::vector<int> dm;
+            int rounds = 0;
+            timed("pc", [&]
+                  { dm = compressPath(o, grid, &rounds); });
+
+            static LinkTables lt;
+            timed("lut_build", [&]
+                  { buildLUT(lt); });
+
+            CriticalPoints cpS, cpL;
+            timed("cp_simple", [&]
+                  { cpS = classifyCriticalPoints(grid, o, dm, lt, false); });
+            timed("cp_lut", [&]
+                  { cpL = classifyCriticalPoints(grid, o, dm, lt, true); });
+
+            auto byV = [](const SaddleInfo &a, const SaddleInfo &b)
+            { return a.v < b.v; };
+            std::sort(cpS.saddles.begin(), cpS.saddles.end(), byV);
+            std::sort(cpL.saddles.begin(), cpL.saddles.end(), byV);
+            std::sort(cpS.maxima.begin(), cpS.maxima.end());
+            std::sort(cpL.maxima.begin(), cpL.maxima.end());
+
+            bool same = cpS.maxima == cpL.maxima && cpS.saddles.size() == cpL.saddles.size() &&
+                        std::equal(cpS.saddles.begin(), cpS.saddles.end(), cpL.saddles.begin(),
+                                   [](const SaddleInfo &a, const SaddleInfo &b)
+                                   { return a.v == b.v && a.multiplicity == b.multiplicity; });
+
+            // maxima from classification must be exactly the vertices with dm[v] == v
+            std::vector<int> pcMax;
+            for (int v = 0; v < grid.n; ++v)
+                if (dm[v] == v)
+                    pcMax.push_back(v);
+            bool maxConsistent = (pcMax == cpL.maxima);
+
+            long long mult = 0;
+            for (auto &s : cpL.saddles)
+                mult += s.multiplicity;
+
+            std::printf("  maxima=%zu  saddles=%zu  total_multiplicity=%lld  pc_rounds=%d\n",
+                        cpL.maxima.size(), cpL.saddles.size(), mult, rounds);
+            std::printf("  [%s] simple == LUT\n", same ? "PASS" : "FAIL");
+            std::printf("  [%s] maxima == {v : dm[v] == v}\n", maxConsistent ? "PASS" : "FAIL");
+
+            writeMaxima(outDir + "/maxima_cp.csv", cpL.maxima, o.order, f);
+            writeSaddles(outDir + "/saddles_cp.csv", cpL.saddles, o.order, f);
+            return (same && maxConsistent) ? 0 : 2;
         }
 
         std::fprintf(stderr, "unknown --algo '%s'\n", algo.c_str());

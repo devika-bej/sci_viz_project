@@ -3,16 +3,7 @@
 #include <numeric>
 #include "grid.h"
 #include "order.h"
-
-struct PersistencePair
-{
-    int maxV, saddle, parentMax;
-};
-
-struct SaddleInfo
-{
-    int v, multiplicity;
-};
+#include "types.h"
 
 struct BaselineSplitTree
 {
